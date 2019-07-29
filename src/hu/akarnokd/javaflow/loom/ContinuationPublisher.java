@@ -5,7 +5,7 @@ import java.util.concurrent.Flow.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-public class ContinuationPublisher<T> implements Flow.Publisher<T> {
+public final class ContinuationPublisher<T> implements Flow.Publisher<T> {
 
     final Consumer<Consumer<? super T>> continuableGenerator;
 
@@ -60,7 +60,7 @@ public class ContinuationPublisher<T> implements Flow.Publisher<T> {
         public void request(long n) {
             if (n <= 0) {
                 stop = new IllegalArgumentException("§3.9 violated: positive request amount required but it was " + n);
-                n = 1; // this will resume a suspended
+                n = 1; // this will resume a suspended continuation
             }
             for (;;) {
                 var current = get();
@@ -75,7 +75,11 @@ public class ContinuationPublisher<T> implements Flow.Publisher<T> {
                 
                 if (compareAndSet(current, next)) {
                     if (current == 0L) {
-                        continuation.run();
+                        try {
+                            continuation.run();
+                        } catch (IllegalStateException ignored) {
+                            // could mean the continuation has ended and there is nothing to resume
+                        }
                     }
                     return;
                 }

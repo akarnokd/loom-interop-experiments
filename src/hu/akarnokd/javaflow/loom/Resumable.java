@@ -1,18 +1,27 @@
 package hu.akarnokd.javaflow.loom;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Resumable extends AtomicReference<Continuation> {
+public class Resumable extends AtomicBoolean {
 
     private static final long serialVersionUID = -4732819140145898673L;
 
+    final ContinuationScope scope;
     
-    public void await() {
+    public Resumable() {
+        this.scope = new ContinuationScope("Resumable");
     }
     
-    public void resume() {
+    public final void await() {
+        if (!get()) {
+            Continuation.yield(scope);
+        }
+        set(false);
     }
     
-    static final ContinuationScope SCOPE = new ContinuationScope("Resumable.Global");
-    static final Continuation READY = new Continuation(SCOPE, () -> {});
+    public final void resume() {
+        if (!get() && compareAndSet(false, true)) {
+            Continuation.getCurrentContinuation(scope).run();
+        }
+    }
 }
