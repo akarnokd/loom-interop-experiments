@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.*;
 
 import org.junit.Test;
 
@@ -233,6 +233,74 @@ public class ContinuationPublisherTest {
             Thread.sleep(500);
             
             assertTrue(cleanup.get());
+            
+            assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
+        } finally {
+            exec.shutdown();
+        }
+    }
+    
+
+    @Test
+    public void invalidRequest() throws Exception {
+        var cleanup = new AtomicBoolean();
+        var p = new ContinuationPublisher<Integer>(emitter -> {
+            int i = 0;
+            try {
+                for (i = 0; i < 10; i++) {
+                    emitter.accept(i);
+                }
+            } finally {
+                cleanup.set(true);
+            }
+        });
+        
+        var list = new ArrayList<Integer>();
+        var exec = Executors.newSingleThreadExecutor();
+        var ex = new AtomicReference<Throwable>();
+        
+        try {
+            p.subscribe(new Flow.Subscriber<Integer>() {
+    
+                Subscription upstream;
+                
+                @Override
+                public void onSubscribe(Subscription subscription) {
+                    this.upstream = subscription;
+                    subscription.request(1);
+                }
+    
+                @Override
+                public void onNext(Integer item) {
+                    System.out.println(item);
+                    list.add(item);
+                    if (item == 5) {
+                        exec.submit(() -> {
+                            Thread.sleep(200);
+                            upstream.request(-1);
+                            return null;
+                        });
+                    } else {
+                        upstream.request(1);
+                    }
+                }
+    
+                @Override
+                public void onError(Throwable throwable) {
+                    ex.set(throwable);
+                }
+    
+                @Override
+                public void onComplete() {
+                    System.out.println("Done");
+                }
+            });
+
+            Thread.sleep(500);
+            
+            assertTrue(cleanup.get());
+            
+            assertTrue(ex.get() instanceof IllegalArgumentException);
             
             assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
         } finally {

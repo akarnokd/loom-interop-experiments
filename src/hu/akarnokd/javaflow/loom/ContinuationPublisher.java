@@ -48,7 +48,6 @@ public class ContinuationPublisher<T> implements Flow.Publisher<T> {
             }
             var stop = this.stop;
             if (stop == null) {
-                // Because of RS Rule §3.9
                 downstream.onNext(t);
                 
                 addAndGet(-1);
