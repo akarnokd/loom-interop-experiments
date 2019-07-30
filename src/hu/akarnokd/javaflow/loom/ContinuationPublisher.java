@@ -75,17 +75,23 @@ public final class ContinuationPublisher<T> implements Flow.Publisher<T> {
                 
                 if (compareAndSet(current, next)) {
                     if (current == 0L) {
-                        try {
-                            continuation.run();
-                        } catch (IllegalStateException ignored) {
-                            // could mean the continuation has ended and there is nothing to resume
-                        }
+                        resume();
                     }
                     return;
                 }
             }
         }
 
+        void resume() {
+            while (!continuation.isDone()) {
+                try {
+                    continuation.run();
+                } catch (IllegalStateException ignored) {
+                    // could mean the continuation has ended and there is nothing to resume
+                }
+            }
+        }
+        
         @Override
         public void cancel() {
             stop = STOP;
