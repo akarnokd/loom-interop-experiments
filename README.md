@@ -47,3 +47,29 @@ and the scope is closed.
 
 You can fork off computation via `scope.schedule` and `join` them back. Note however that calling `emitter.accept` from inside these scheduled
 tasks is prohibited and may lead to undefined behavior due to races.
+
+### FiberConsumer
+
+Runs a `Publisher` and through a returned `Iterator`, every next source items are made available upon each `next()` call in a fiber-blocking fashion.
+
+```java
+try (FiberScope scope = FiberScope.open()) {
+
+    var sp = new SubmissionPublisher<Integer>();
+    
+    try (var iter = new FiberConsumer<>(sp).iterator()) {
+        scope.schedule(() -> {
+            for (int i = 1; i < 10; i++) {
+                 sp.submit(i);
+             }
+             sp.close();
+        });
+        
+        while (iter.hasNext()) {
+            System.out.println(iter.next());
+        }
+    }
+}
+```
+
+Unfortunately, the standard for-each over `Iterable` doesn't work because when the control would leave the iteration, the upstream subscription should be cancelled. Therefore, a custom `CloseableIterator` is returned to be used with the **try-with-resources** construct. 
