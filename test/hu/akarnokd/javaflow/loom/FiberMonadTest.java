@@ -12,9 +12,9 @@ public class FiberMonadTest {
                 
                 var n = 100;
                 
-                var source = new FiberPublisher<Integer>((sc, emitter) -> {
+                var source = new FiberPublisher<Integer>(emitter -> {
                     for (var i = 0; i < n; i++) {
-                        emitter.accept(i);
+                        emitter.emit(i);
                     }
                 });
                 

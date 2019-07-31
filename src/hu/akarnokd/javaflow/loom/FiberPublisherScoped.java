@@ -5,32 +5,24 @@ import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.*;
 
-public final class FiberPublisher<T> implements Flow.Publisher<T> {
+public final class FiberPublisherScoped<T> implements Flow.Publisher<T> {
 
-    final FiberGenerator<T> generator;
+    final FiberGeneratorScoped<T> generator;
     
-    public FiberPublisher(FiberGenerator<T> generator) {
+    final FiberScope.Option[] options;
+
+    public FiberPublisherScoped(FiberGeneratorScoped<T> generator, FiberScope.Option... options) {
         this.generator = generator;
+        this.options = options;
     }
+
+
 
     @Override
-    public void subscribe(Subscriber<? super T> downstream) {
-        var fs = new FiberSubscription<T>(downstream);
-        try {
-            downstream.onSubscribe(fs);
-            generator.generate(fs);
-        } catch (Throwable ex) {
-            if (ex != STOP) {
-                downstream.onError(ex);
-            }
-            return;
-        }
-        if (fs.stop == null) {
-            downstream.onComplete();
-        }
+    public void subscribe(Subscriber<? super T> subscriber) {
+        var fs = new FiberSubscription<T>(subscriber);
+        fs.run(generator, options);
     }
-
-    static final RuntimeException STOP = new RuntimeException("Cancellation from downstream");
 
     static final class FiberSubscription<T> extends AtomicLong implements Flow.Subscription, Emitter<T> {
 
@@ -39,6 +31,7 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
         final Subscriber<? super T> downstream;
 
         volatile RuntimeException stop;
+        static final RuntimeException STOP = new RuntimeException("Cancellation from downstream");
         
         final ReentrantLock lock;
         
@@ -50,6 +43,23 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
             this.condition = lock.newCondition();
         }
 
+        void run(FiberGeneratorScoped<T> generator, FiberScope.Option... options) {
+            try {
+                try (FiberScope scope = FiberScope.open(options)) {
+                    downstream.onSubscribe(this);
+                    generator.generate(scope, this);
+                }
+            } catch (Throwable ex) {
+                if (ex != STOP) {
+                    downstream.onError(ex);
+                }
+                return;
+            }
+            if (stop == null) {
+                downstream.onComplete();
+            }
+        }
+        
         @Override
         public void emit(T t) throws Throwable {
             if (get() == 0 && stop == null) {

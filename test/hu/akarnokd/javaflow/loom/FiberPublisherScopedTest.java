@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.*;
 
 import org.junit.Test;
 
-public class FiberPublisherTest {
+public class FiberPublisherScopedTest {
 
     @Test
     public void singleStepConsume() {
-        var p = new FiberPublisher<Integer>(emitter -> {
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
             for (int i = 0; i < 10; i++) {
                 emitter.emit(i);
             }
@@ -52,14 +52,13 @@ public class FiberPublisherTest {
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), list);
     }
 
+
     @Test
     public void singleStepConsumeScheduled() {
-        var p = new FiberPublisher<Integer>(emitter -> {
-            try (var scope = FiberScope.open()) {
-                for (int i = 0; i < 10; i++) {
-                    var j = i;
-                    emitter.emit(scope.schedule(() -> j).join());
-                }
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
+            for (int i = 0; i < 10; i++) {
+                var j = i;
+                emitter.emit(scope.schedule(() -> j).join());
             }
         });
         
@@ -98,7 +97,7 @@ public class FiberPublisherTest {
 
     @Test
     public void singleStepConsumeAsync() throws Exception {
-        var p = new FiberPublisher<Integer>(emitter -> {
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
             for (int i = 0; i < 10; i++) {
                 emitter.emit(i);
             }
@@ -169,12 +168,10 @@ public class FiberPublisherTest {
 
     @Test
     public void singleStepConsumeAsyncScheduled() throws Exception {
-        var p = new FiberPublisher<Integer>(emitter -> {
-            try (var scope = FiberScope.open()) {
-                for (int i = 0; i < 10; i++) {
-                    var j = i;
-                    emitter.emit(scope.schedule(() -> j).join());
-                }
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
+            for (int i = 0; i < 10; i++) {
+                var j = i;
+                emitter.emit(scope.schedule(() -> j).join());
             }
         });
 
@@ -244,7 +241,7 @@ public class FiberPublisherTest {
     @Test
     public void singleStepCancel() throws Exception {
         var cleanup = new AtomicBoolean();
-        var p = new FiberPublisher<Integer>(emitter -> {
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
             int i = 0;
             try {
                 for (i = 0; i < 10; i++) {
@@ -297,7 +294,7 @@ public class FiberPublisherTest {
     @Test
     public void singleStepAsyncCancel() throws Exception {
         var cleanup = new AtomicBoolean();
-        var p = new FiberPublisher<Integer>(emitter -> {
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
             int i = 0;
             try {
                 for (i = 0; i < 10; i++) {
@@ -361,7 +358,7 @@ public class FiberPublisherTest {
     @Test
     public void invalidRequest() throws Exception {
         var cleanup = new AtomicBoolean();
-        var p = new FiberPublisher<Integer>(emitter -> {
+        var p = new FiberPublisherScoped<Integer>((scope, emitter) -> {
             int i = 0;
             try {
                 for (i = 0; i < 10; i++) {
