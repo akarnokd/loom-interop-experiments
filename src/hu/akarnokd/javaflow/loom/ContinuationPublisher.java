@@ -86,6 +86,7 @@ public final class ContinuationPublisher<T> implements Flow.Publisher<T> {
             while (!continuation.isDone()) {
                 try {
                     continuation.run();
+                    return;
                 } catch (IllegalStateException ignored) {
                     // could mean the continuation has ended and there is nothing to resume
                 }
