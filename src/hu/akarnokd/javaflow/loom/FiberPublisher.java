@@ -44,6 +44,8 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
         
         final Condition condition;
         
+        long produced;
+        
         FiberSubscription(Subscriber<? super T> downstream) {
             this.downstream = downstream;
             this.lock = new ReentrantLock();
@@ -52,14 +54,15 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
 
         @Override
         public void emit(T t) throws Throwable {
-            if (get() == 0 && stop == null) {
-                await();
+            var p = produced;
+            if (get() == p && stop == null) {
+                await(p);
             }
             var s = stop;
             if (s == null) {
                 downstream.onNext(t);
                 
-                decrementAndGet();
+                produced = p + 1;
             } else {
                 throw s;
             }
@@ -74,7 +77,7 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
             for (;;) {
                 var current = get();
                 if (current == Long.MAX_VALUE) {
-                    return;
+                    break;
                 }
                 
                 var next = current + n;
@@ -83,18 +86,16 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
                 }
                 
                 if (compareAndSet(current, next)) {
-                    if (current == 0L) {
-                        resume();
-                    }
-                    return;
+                    resume();
+                    break;
                 }
             }
         }
 
-        void await() throws InterruptedException {
+        void await(long p) throws InterruptedException {
             lock.lock();
             try {
-                while (get() == 0) {
+                while (get() == p) {
                     condition.await();
                 }
             } finally {

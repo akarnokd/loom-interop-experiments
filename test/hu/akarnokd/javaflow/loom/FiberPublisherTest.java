@@ -417,6 +417,7 @@ public class FiberPublisherTest {
             
             assertTrue(cleanup.get());
             
+            assertNotNull(ex.get());
             assertTrue(ex.get() instanceof IllegalArgumentException);
             
             assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
