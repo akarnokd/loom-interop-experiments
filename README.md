@@ -1,19 +1,21 @@
 # loom-interop-experiments
 Code to experiment with Project Loom continuation/fiber API.
 
-## Features
+# Features
 
 Unless mentioned otherwise, all components use the Java `Flow` Reactive classes.
 
-Table of contents
+## Table of contents
 
 - [ContinuationPublisher](#continuationpublisher)
 - [FiberPublisher](#fiberpublisher) & [FiberPublisherScoped](#fiberpublisherscoped)
+- [FiberSubscribeOnPublisher](#fibersubscribeonpublisher)
 - [FiberMap](#fibermap)
 - [FiberConsumer](#fiberconsumer)
 - [ExecutorPool](#executorpool) & [ExecutorWorker](#executorworker)
 - [ResumableFiber](#resumablefiber)
 
+## Components
 
 ### ContinuationPublisher
 
