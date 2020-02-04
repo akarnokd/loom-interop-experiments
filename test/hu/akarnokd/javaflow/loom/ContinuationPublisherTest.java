@@ -18,13 +18,13 @@ public class ContinuationPublisherTest {
                 emitter.accept(i);
             }
         });
-        
+
         var list = new ArrayList<Integer>();
-        
+
         p.subscribe(new Flow.Subscriber<Integer>() {
 
             Subscription upstream;
-            
+
             @Override
             public void onSubscribe(Subscription subscription) {
                 this.upstream = subscription;
@@ -48,7 +48,7 @@ public class ContinuationPublisherTest {
                 System.out.println("Done");
             }
         });
-        
+
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), list);
     }
 
@@ -66,11 +66,11 @@ public class ContinuationPublisherTest {
         var exec = Executors.newSingleThreadExecutor();
         try {
             var cdl = new CountDownLatch(1);
-            
+
             p.subscribe(new Flow.Subscriber<Integer>() {
 
                 Subscription upstream;
-                
+
                 @Override
                 public void onSubscribe(Subscription subscription) {
                     this.upstream = subscription;
@@ -105,20 +105,20 @@ public class ContinuationPublisherTest {
                     cdl.countDown();
                 }
             });
-            
+
             assertTrue(cdl.await(30, TimeUnit.SECONDS));
         } finally {
             exec.shutdown();
         }
-        
+
         assertEquals(Arrays.asList(
-                0, 0, 
-                1, -1, 
-                2, -2, 
-                3, -3, 
-                4, -4, 
+                0, 0,
+                1, -1,
+                2, -2,
+                3, -3,
+                4, -4,
                 5, -5,
-                6, -6, 
+                6, -6,
                 7, -7,
                 8, -8,
                 9), list);
@@ -137,13 +137,13 @@ public class ContinuationPublisherTest {
                 cleanup.set(true);
             }
         });
-        
+
         var list = new ArrayList<Integer>();
-        
+
         p.subscribe(new Flow.Subscriber<Integer>() {
 
             Subscription upstream;
-            
+
             @Override
             public void onSubscribe(Subscription subscription) {
                 this.upstream = subscription;
@@ -173,7 +173,7 @@ public class ContinuationPublisherTest {
         });
 
         assertTrue(cleanup.get());
-        
+
         assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
     }
 
@@ -190,20 +190,20 @@ public class ContinuationPublisherTest {
                 cleanup.set(true);
             }
         });
-        
+
         var list = new ArrayList<Integer>();
         var exec = Executors.newSingleThreadExecutor();
         try {
             p.subscribe(new Flow.Subscriber<Integer>() {
-    
+
                 Subscription upstream;
-                
+
                 @Override
                 public void onSubscribe(Subscription subscription) {
                     this.upstream = subscription;
                     subscription.request(1);
                 }
-    
+
                 @Override
                 public void onNext(Integer item) {
                     System.out.println(item);
@@ -218,12 +218,12 @@ public class ContinuationPublisherTest {
                         upstream.request(1);
                     }
                 }
-    
+
                 @Override
                 public void onError(Throwable throwable) {
                     throwable.printStackTrace();
                 }
-    
+
                 @Override
                 public void onComplete() {
                     System.out.println("Done");
@@ -231,15 +231,15 @@ public class ContinuationPublisherTest {
             });
 
             Thread.sleep(500);
-            
+
             assertTrue(cleanup.get());
-            
+
             assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
         } finally {
             exec.shutdown();
         }
     }
-    
+
 
     @Test
     public void invalidRequest() throws Exception {
@@ -254,22 +254,22 @@ public class ContinuationPublisherTest {
                 cleanup.set(true);
             }
         });
-        
+
         var list = new ArrayList<Integer>();
         var exec = Executors.newSingleThreadExecutor();
         var ex = new AtomicReference<Throwable>();
-        
+
         try {
             p.subscribe(new Flow.Subscriber<Integer>() {
-    
+
                 Subscription upstream;
-                
+
                 @Override
                 public void onSubscribe(Subscription subscription) {
                     this.upstream = subscription;
                     subscription.request(1);
                 }
-    
+
                 @Override
                 public void onNext(Integer item) {
                     System.out.println(item);
@@ -284,12 +284,12 @@ public class ContinuationPublisherTest {
                         upstream.request(1);
                     }
                 }
-    
+
                 @Override
                 public void onError(Throwable throwable) {
                     ex.set(throwable);
                 }
-    
+
                 @Override
                 public void onComplete() {
                     System.out.println("Done");
@@ -297,11 +297,11 @@ public class ContinuationPublisherTest {
             });
 
             Thread.sleep(500);
-            
+
             assertTrue(cleanup.get());
-            
+
             assertTrue(ex.get() instanceof IllegalArgumentException);
-            
+
             assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5), list);
         } finally {
             exec.shutdown();

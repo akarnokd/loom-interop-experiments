@@ -8,16 +8,16 @@ public final class ForkJoinExecutorPool implements ExecutorPool, AutoCloseable {
     public ExecutorWorker worker() {
         return new SingleExecutorWorker(ForkJoinPool.commonPool());
     }
-    
+
     @Override
     public void close() {
         // the common pool can't be shut down
     }
-    
+
     static final class SingleExecutorWorker implements ExecutorWorker {
- 
+
         final ExecutorService service;
-        
+
         SingleExecutorWorker(ExecutorService service) {
             this.service = service;
         }

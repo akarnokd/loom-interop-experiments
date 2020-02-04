@@ -11,15 +11,15 @@ public class HandoverTest {
     public void basic() throws Exception {
         var h = new Handover<Integer>();
         var n = 1_000_000;
-        
+
         ForkJoinTask<?> t = ForkJoinPool.commonPool().submit(() -> {
-            while (h.get().intValue() != n);
+            while (h.get().intValue() != n) { }
         });
-        
+
         for (int i = 1; i <= n; i++) {
             h.emit(i);
         }
-        
+
         t.join();
     }
 }

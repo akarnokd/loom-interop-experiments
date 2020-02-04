@@ -5,9 +5,9 @@ import java.util.concurrent.*;
 public final class ParallelExecutorPool implements ExecutorPool {
 
     final ExecutorService[] executors;
-    
+
     int n;
-    
+
     public ParallelExecutorPool(int parallelism) {
         this.executors = new ExecutorService[parallelism];
         for (int i = 0; i < parallelism; i++) {
@@ -18,9 +18,9 @@ public final class ParallelExecutorPool implements ExecutorPool {
     @Override
     public ExecutorWorker worker() {
         var index = n;
-        
+
         var result = new SingleExecutorPool.SingleExecutorWorker(executors[index]);
-        
+
         if (++index == executors.length) {
             index = 0;
         }

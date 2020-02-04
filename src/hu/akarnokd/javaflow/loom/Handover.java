@@ -5,9 +5,9 @@ public class Handover<T> {
     volatile T value;
 
     public void emit(T item) {
-        
+
     }
-    
+
     public T get() {
         return null;
     }

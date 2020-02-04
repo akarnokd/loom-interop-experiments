@@ -8,7 +8,7 @@ import java.util.concurrent.locks.*;
 public final class FiberPublisher<T> implements Flow.Publisher<T> {
 
     final FiberGenerator<T> generator;
-    
+
     public FiberPublisher(FiberGenerator<T> generator) {
         this.generator = generator;
     }
@@ -39,13 +39,13 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
         final Subscriber<? super T> downstream;
 
         volatile RuntimeException stop;
-        
+
         final ReentrantLock lock;
-        
+
         final Condition condition;
-        
+
         long produced;
-        
+
         FiberSubscription(Subscriber<? super T> downstream) {
             this.downstream = downstream;
             this.lock = new ReentrantLock();
@@ -61,7 +61,7 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
             var s = stop;
             if (s == null) {
                 downstream.onNext(t);
-                
+
                 produced = p + 1;
             } else {
                 throw s;
@@ -70,7 +70,7 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
 
         @Override
         public void request(long n) {
-            if(n <= 0) {
+            if (n <= 0) {
                 stop = new IllegalArgumentException("§3.9 violated: positive request amount required but it was " + n);
                 n = 1; // this will resume a suspended continuation
             }
@@ -79,12 +79,12 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
                 if (current == Long.MAX_VALUE) {
                     break;
                 }
-                
+
                 var next = current + n;
                 if (next < 0L) {
                     next = Long.MAX_VALUE;
                 }
-                
+
                 if (compareAndSet(current, next)) {
                     resume();
                     break;
@@ -102,7 +102,7 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
                 lock.unlock();
             }
         }
-        
+
         void resume() {
             lock.lock();
             try {
@@ -111,12 +111,12 @@ public final class FiberPublisher<T> implements Flow.Publisher<T> {
                 lock.unlock();
             }
         }
-        
+
         @Override
         public void cancel() {
             stop = STOP;
             request(1);
         }
-        
+
     }
 }

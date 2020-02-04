@@ -7,50 +7,50 @@ import java.util.concurrent.locks.*;
 public final class FiberConsumer<T> {
 
     final Publisher<? extends T> source;
-    
+
     public FiberConsumer(Publisher<? extends T> source) {
         this.source = source;
     }
-    
+
     public CloseableIterator<T> iterator() {
         var ic = new IteratorConsumer<T>();
         source.subscribe(ic);
         return ic;
     }
-    
+
     static final class IteratorConsumer<T> implements Subscriber<T>, CloseableIterator<T> {
 
         Subscription upstream;
-        
+
         volatile boolean hasValue;
         T value;
-        
+
         volatile boolean done;
         Throwable error;
-        
+
         boolean consumerHasValue;
         T consumerValue;
         boolean consumerDone;
-        
+
         final ReentrantLock producerLock;
-        
+
         final Condition producerReady;
-        
+
         boolean producerFlag;
-        
+
         final ReentrantLock consumerLock;
-        
+
         final Condition consumerReady;
-        
+
         boolean consumerFlag;
-        
+
         IteratorConsumer() {
             this.producerLock = new ReentrantLock();
             this.producerReady = producerLock.newCondition();
             this.consumerLock = new ReentrantLock();
             this.consumerReady = consumerLock.newCondition();
         }
-        
+
         @Override
         public boolean hasNext() {
             if (consumerHasValue) {
@@ -68,17 +68,17 @@ public final class FiberConsumer<T> {
 
                 consumerDone = done;
                 var consumerError = error;
-                
+
                 consumerHasValue = hasValue;
                 hasValue = false;
                 consumerValue = value;
                 value = null;
-                
-                
+
+
                 if (!consumerHasValue && consumerError != null) {
                     throw new RuntimeException(consumerError);
                 }
-                
+
                 return consumerHasValue;
             } else {
                 var consumerError = error;
@@ -116,12 +116,12 @@ public final class FiberConsumer<T> {
                     onError(ex);
                     return;
                 }
-    
+
                 value = item;
                 hasValue = true;
-                
+
                 producerReady();
-                
+
                 upstream.request(1);
             }
         }
@@ -144,7 +144,7 @@ public final class FiberConsumer<T> {
             upstream.cancel();
             consumerReady(); // unblock producers
         }
-        
+
         void consumerAwait() throws InterruptedException {
             consumerLock.lock();
             try {
@@ -156,7 +156,7 @@ public final class FiberConsumer<T> {
                 consumerLock.unlock();
             }
         }
-        
+
         void consumerReady() {
             consumerLock.lock();
             try {
@@ -166,7 +166,7 @@ public final class FiberConsumer<T> {
                 consumerLock.unlock();
             }
         }
-        
+
         void producerAwait() throws InterruptedException {
             producerLock.lock();
             try {
@@ -178,7 +178,7 @@ public final class FiberConsumer<T> {
                 producerLock.unlock();
             }
         }
-        
+
         void producerReady() {
             producerLock.lock();
             try {

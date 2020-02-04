@@ -17,8 +17,8 @@ public class BlockingQueueSelectorTest {
 
             for (int i = 0; i < queues.length; i++) {
                 var q = new ArrayBlockingQueue<Integer>(10);
-                queues[i] = q; 
-                
+                queues[i] = q;
+
                 scope.submit(() -> {
                     for (int j = 0; j < n; j++) {
                         q.put(j);

@@ -5,16 +5,16 @@ import java.util.concurrent.locks.*;
 public class ResumableLock {
 
     final ReentrantLock lock;
-    
+
     final Condition condition;
-    
+
     boolean flag;
-    
+
     public ResumableLock() {
         this.lock = new ReentrantLock();
         this.condition = lock.newCondition();
     }
-    
+
     public void await() throws InterruptedException {
         lock.lock();
         try {
@@ -26,7 +26,7 @@ public class ResumableLock {
             lock.unlock();
         }
     }
-    
+
     public void resume() {
         lock.lock();
         try {

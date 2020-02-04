@@ -12,9 +12,9 @@ public final class BlockingQueueSelector<T> implements AutoCloseable {
     final BlockingQueue<T> outputQueue;
 
     final AtomicBoolean once;
-    
+
     final Future<?>[] futures;
-    
+
     public BlockingQueueSelector(BlockingQueue<T>[] queues, ExecutorService executor, int capacity) {
         this.queues = queues;
         this.executor = executor;
@@ -22,7 +22,7 @@ public final class BlockingQueueSelector<T> implements AutoCloseable {
         this.once = new AtomicBoolean();
         this.futures = new Future[queues.length];
     }
-    
+
     public T take() throws InterruptedException {
         if (!once.get() && once.compareAndSet(false, true)) {
             int i = 0;
@@ -38,7 +38,7 @@ public final class BlockingQueueSelector<T> implements AutoCloseable {
         }
         return outputQueue.take();
     }
-    
+
     @Override
     public void close() throws Exception {
         for (Future<?> future : futures) {
