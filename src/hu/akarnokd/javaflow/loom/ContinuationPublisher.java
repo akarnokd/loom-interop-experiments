@@ -15,7 +15,7 @@ public final class ContinuationPublisher<T> implements Flow.Publisher<T> {
     
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        var cs = new ContinuationSubscription<T>(subscriber, continuableGenerator);
+        var cs = new ContinuationSubscription<>(subscriber, continuableGenerator);
         cs.continuation = new Continuation(cs.scope, cs);
         subscriber.onSubscribe(cs);
     }
